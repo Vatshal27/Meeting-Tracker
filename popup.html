@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Meeting Tracker Extension - Track participants across all meeting platforms">
+  <link href="styles.css" rel="stylesheet">
+  <title>Meeting Tracker</title>
+</head>
+<body class="bg-gradient-to-br from-blue-600 to-purple-700 text-white min-h-screen">
+  <!-- Toast Notification -->
+  <div id="toast" class="hidden">
+    <span id="toast-message"></span>
+  </div>
+
+  <!-- Header -->
+  <div class="glass-intense p-6 text-center border-b border-white/10">
+    <div class="flex items-center justify-center space-x-2 mb-2">
+      <div class="text-2xl">📊</div>
+      <h1 class="text-xl font-bold">Meeting Tracker</h1>
+      <div id="connection-status" class="status-dot status-online ml-2"></div>
+    </div>
+    <p class="text-sm opacity-80">Track participants across all platforms</p>
+  </div>
+
+  <!-- Loading State -->
+  <div id="loading" class="flex flex-col items-center justify-center py-16 space-y-4">
+    <div class="loading-spinner animate-spin"></div>
+    <div class="flex space-x-1">
+      <div class="loading-dot"></div>
+      <div class="loading-dot"></div>
+      <div class="loading-dot"></div>
+    </div>
+    <p class="text-sm opacity-80">Loading meeting data...</p>
+  </div>
+
+  <!-- No Meeting State -->
+  <div id="no-meeting" class="hidden empty-state">
+    <div class="empty-state-icon">🎯</div>
+    <div class="space-y-2">
+      <h2 class="text-lg font-semibold">No Active Meeting Detected</h2>
+      <p class="text-sm opacity-80 leading-relaxed max-w-sm mx-auto">
+        Open a meeting on Google Meet, Zoom, Microsoft Teams, or Webex to start tracking participants
+      </p>
+      <div class="flex justify-center space-x-2 mt-4 text-xs opacity-60">
+        <span>📱 Google Meet</span>
+        <span>💻 Zoom</span>
+        <span>🏢 Teams</span>
+        <span>📞 Webex</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div id="content" class="hidden">
+    <!-- Statistics Cards -->
+    <div class="p-6 space-y-6">
+      <div class="grid grid-cols-2 gap-4">
+        <!-- Total Participants Card -->
+        <div class="glass rounded-xl p-4 text-center transition-all hover:scale-105">
+          <div id="total-participants" class="text-3xl font-bold text-yellow-400 mb-1">0</div>
+          <div class="text-xs opacity-80">Total Participants</div>
+          <div class="w-full bg-white bg-opacity-20 rounded-full h-1 mt-2">
+            <div id="total-progress" class="bg-yellow-400 h-1 rounded-full transition-all duration-500" style="width: 0%"></div>
+          </div>
+        </div>
+
+        <!-- Current Participants Card -->
+        <div class="glass rounded-xl p-4 text-center transition-all hover:scale-105">
+          <div id="current-participants" class="text-3xl font-bold text-green-400 mb-1">0</div>
+          <div class="text-xs opacity-80">Currently Present</div>
+          <div class="w-full bg-white bg-opacity-20 rounded-full h-1 mt-2">
+            <div id="current-progress" class="bg-green-400 h-1 rounded-full transition-all duration-500" style="width: 0%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Meeting Info Card -->
+      <div class="glass-intense rounded-xl p-4 space-y-3">
+        <div class="flex justify-between items-center text-sm">
+          <span class="opacity-80 flex items-center">
+            <span class="mr-2">🌐</span>Platform:
+          </span>
+          <span id="platform" class="font-semibold text-sky-300">-</span>
+        </div>
+        
+        <div class="flex justify-between items-center text-sm">
+          <span class="opacity-80 flex items-center">
+            <span class="mr-2">🕐</span>Started:
+          </span>
+          <span id="start-time" class="font-semibold text-sky-300">-</span>
+        </div>
+        
+        <div class="flex justify-between items-center text-sm">
+          <span class="opacity-80 flex items-center">
+            <span class="mr-2">⏱️</span>Duration:
+          </span>
+          <span id="session-duration" class="font-semibold text-sky-300">-</span>
+        </div>
+
+        <!-- Meeting URL (truncated) -->
+        <div class="flex justify-between items-center text-sm pt-2 border-t border-white border-opacity-10">
+          <span class="opacity-80 flex items-center">
+            <span class="mr-2">🔗</span>Meeting:
+          </span>
+          <span id="meeting-url" class="font-semibold text-sky-300 text-xs truncate max-w-32" title="">-</span>
+        </div>
+      </div>
+
+      <!-- Participants Section -->
+      <div class="space-y-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <span class="text-lg">👥</span>
+            <h2 class="text-lg font-semibold">Participants</h2>
+          </div>
+          <div class="flex items-center space-x-2 text-xs opacity-70">
+            <div class="flex items-center space-x-1">
+              <div class="status-dot status-online"></div>
+              <span>Online</span>
+            </div>
+            <div class="flex items-center space-x-1">
+              <div class="status-dot status-offline"></div>
+              <span>Left</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Participants Container -->
+        <div id="participants-container" class="space-y-2 max-h-64 overflow-y-auto scrollbar-thin pr-2">
+          <!-- Empty State (will be replaced by JavaScript) -->
+          <div class="empty-state py-8">
+            <div class="empty-state-icon">👤</div>
+            <p class="text-sm mb-2">No participants detected yet</p>
+            <p class="text-xs opacity-60">Participants will appear as they join</p>
+            <div class="flex justify-center mt-4">
+              <div class="loading-dot"></div>
+              <div class="loading-dot"></div>
+              <div class="loading-dot"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="grid grid-cols-3 gap-2 text-xs">
+          <div class="glass rounded-lg p-2 text-center">
+            <div id="avg-duration" class="font-semibold">-</div>
+            <div class="opacity-70">Avg Duration</div>
+          </div>
+          <div class="glass rounded-lg p-2 text-center">
+            <div id="total-sessions" class="font-semibold">-</div>
+            <div class="opacity-70">Total Sessions</div>
+          </div>
+          <div class="glass rounded-lg p-2 text-center">
+            <div id="peak-participants" class="font-semibold">-</div>
+            <div class="opacity-70">Peak Count</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="grid grid-cols-3 gap-3">
+        <button id="export-btn" class="btn-primary" title="Export data to JSON and CSV">
+          <span>📊</span>
+          <span>Export</span>
+        </button>
+        
+        <button id="refresh-btn" class="btn-secondary" title="Refresh meeting data">
+          <span>🔄</span>
+          <span>Refresh</span>
+        </button>
+        
+        <button id="clear-btn" class="btn-danger" title="Clear all tracking data">
+          <span>🗑️</span>
+          <span>Clear</span>
+        </button>
+      </div>
+
+      <!-- Advanced Actions -->
+      <div class="flex space-x-2">
+        <button id="settings-btn" class="btn-secondary flex-1 text-xs" title="Extension settings">
+          <span>⚙️</span>
+          <span>Settings</span>
+        </button>
+        
+        <button id="history-btn" class="btn-secondary flex-1 text-xs" title="View meeting history">
+          <span>📚</span>
+          <span>History</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="bg-black bg-opacity-10 border-t border-white border-opacity-10 p-4 text-center">
+    <div class="flex justify-between items-center text-xs opacity-70">
+      <span>Meeting Tracker v2.0</span>
+      <div class="flex items-center space-x-2">
+        <span>🔒 Local storage only</span>
+        <div id="last-updated" title="Last updated">-</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="popup.js"></script>
+</body>
+</html>
